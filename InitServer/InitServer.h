@@ -3,37 +3,29 @@
 
 #pragma once
 
-#include <iostream>
-#include "boost/asio.hpp"
-#include "boost/bind.hpp"
-#include "boost/enable_shared_from_this.hpp"
-
-using namespace boost::asio;
-
-typedef boost::shared_ptr<ip::tcp::socket> socket_ptr;
+#include "Connection.h"
 
 io_service service;
 
 class InitSever : public boost::enable_shared_from_this<InitSever>
 {
 public:
-	InitSever() : acceptor_(service) {}
-	~InitSever() {}
+	InitSever()
+	{
+		acceptor_.reset(new ip::tcp::acceptor(service, ip::tcp::endpoint(ip::address::from_string("127.0.0.1"), 1225)));
+	}
+	~InitSever()
+	{
+		std::cout << __FUNCTION__ << std::endl;
+	}
 
 	void start();
 	void stop();
 
-	void send_message(void* data);
-	void recv_message();
-
-private:
-	bool bind(std::string ip, unsigned short point);
-	void listen();
 	void async_accept();
-	void handle_accept(const boost::system::error_code& e);
+	void handle_accept(connection_ptr conn, const boost::system::error_code& e);
 
 private:
-	socket_ptr socket_;
-	ip::tcp::acceptor acceptor_;
-	std::size_t backlog_;
+	acceptor_ptr acceptor_;
+	std::vector<connection_ptr> connections_;
 };
